@@ -1,0 +1,35 @@
+name: Build Windows Engine
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+
+    - name: Install Dependencies (This takes 15-20 mins)
+      run: .\vcpkg\vcpkg install opencascade:x64-windows eigen3:x64-windows nlohmann-json:x64-windows
+
+    - name: Configure CMake
+      run: cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Gather Files
+      run: |
+        mkdir output
+        copy build\Release\edgepredict-engine.exe output\
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: edgepredict-engine-windows
+        path: output/
